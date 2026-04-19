@@ -334,6 +334,22 @@ function Play(props: Props) {
     ytPlayer.current?.setVolume(vol);
   }, [cid]);
 
+  const startTime = useRef(0);
+  const bufferMeasured = useRef(true);
+  const toUnmute = useRef(false);
+  const handleStateChange = useCallback(() => {
+    if (!bufferMeasured.current) {
+      bufferMeasured.current = true;
+      console.log(
+        `YTPlayer Buffer time (ms): ${performance.now() - startTime.current}`
+      );
+    }
+    if (toUnmute.current) {
+      toUnmute.current = false;
+      ytPlayer.current?.unMute();
+    }
+  }, []);
+
   const ytBegin = chartSeq?.ytBegin ?? 0;
   const ytEnd = chartSeq?.ytEndSec ?? 0;
   const [userBegin, setUserBegin_] = useState<number | null>(null);
@@ -501,15 +517,36 @@ function Play(props: Props) {
 
   const reset = useCallback(() => setShowReady(true), []);
   const start = useCallback(() => {
+    startTime.current = performance.now();
     // Space(スタートボタン)が押されたとき
     switch (ytPlayer.current?.getPlayerState()) {
       case 2:
       case 0:
-        ytPlayer.current?.seekTo(begin, true);
+        const LOOP_COUNT = 5;
+        const TOTAL_DURATION = 5000;
+        const INTERVAL = TOTAL_DURATION / LOOP_COUNT;
+
+        const TARGET_TRIGGER = LOOP_COUNT;
+
+        ytPlayer.current?.mute();
         ytPlayer.current?.playVideo();
+        const timeout = (i: number) => {
+          ytPlayer.current?.seekTo(begin, true);
+          if (i === TARGET_TRIGGER) {
+            toUnmute.current = true;
+            // ytPlayer.current?.unMute();
+          }
+          startTime.current = performance.now();
+          bufferMeasured.current = false;
+        };
+
+        for (let i = 1; i <= LOOP_COUNT; i++) {
+          setTimeout(() => timeout(i), i * INTERVAL);
+        }
         break;
       case 5:
       default:
+        bufferMeasured.current = false;
         ytPlayer.current?.seekTo(begin, true);
         break;
     }
@@ -985,7 +1022,10 @@ function Play(props: Props) {
             ytPlayer={ytPlayer}
             chartBrief={chartBrief}
             onReady={onReady}
-            onStart={onStart}
+            onStart={() => {
+              onStart();
+              handleStateChange();
+            }}
             onStop={onStop}
             onError={onError}
             onPlaybackRateChange={setPlaybackRate}

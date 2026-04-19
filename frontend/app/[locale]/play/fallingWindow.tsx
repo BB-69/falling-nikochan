@@ -153,7 +153,7 @@ export default function FallingWindow(props: Props) {
         runTriggeredTimeStamp.current = performance.now();
         if (Math.round(nowMs / realMs) >= 3 * runFrameCount) {
           // 大幅に遅延している場合
-          console.log("large delay:", nowMs);
+          // console.log("large delay:", nowMs);
           prevRerender = performance.now();
         } else {
           prevRerender += realMs * runFrameCount;
