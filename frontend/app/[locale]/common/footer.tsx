@@ -17,6 +17,7 @@ import { LangSwitcher } from "./langSwitcher.jsx";
 import { ChangeLogPopup } from "./changeLog.jsx";
 import { LinkWithReview } from "./pwaInstall.jsx";
 import { ButtonHighlight } from "./button.jsx";
+import { usePathname } from "next/navigation.js";
 
 export type TabKeys = "top" | "play" | "edit" | "policies" | "links" | null;
 export const pcTabTitleKeys = ["play", "edit", "policies", "links"] as const;
@@ -26,6 +27,7 @@ export const tabURLs = {
   edit: "/main/edit",
   policies: "/main/policies",
   links: "/main/links",
+  version: "/main/version",
   top: "/",
 } as const;
 
@@ -34,6 +36,7 @@ interface Props {
   locale: string;
 }
 export function PCFooter(props: Props) {
+  const pathname = usePathname();
   const themeState = useTheme();
   const tm = useTranslations("main");
   const t = useTranslations("footer");
@@ -70,6 +73,7 @@ export function PCFooter(props: Props) {
             onClick={() => {
               setShowChangeLog(!showChangeLog);
             }}
+            disabled={pathname.endsWith(`/${props.locale}${tabURLs.version}`)}
           >
             <span>ver.</span>
             <span className="ml-1 mr-0.5">{process.env.buildVersion}</span>
